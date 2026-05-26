@@ -41,7 +41,7 @@ def main():
 
     supervisor = get_supervisor()
 
-    welcome_text = Text("🤖 LangGraph Supervisor Chat", style="bold cyan")
+    welcome_text = Text("🤖 Agent Supervisor Chat", style="bold cyan")
     welcome_panel = Panel(
         welcome_text, subtitle="Type 'quit' or 'q' to exit", border_style="cyan"
     )

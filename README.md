@@ -1,4 +1,4 @@
-# LangGraph Supervisor
+# Agent Supervisor
 
 A multi-agent AI system built with LangGraph that intelligently routes user queries between specialized agents for optimal task handling.
 
