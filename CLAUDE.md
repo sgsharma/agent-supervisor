@@ -1,10 +1,10 @@
-# CLAUDE.md - langgraph-supervisor
+# CLAUDE.md - agent-supervisor
 
 ## Project Overview
 
 Multi-agent AI system built with LangGraph using a supervisor pattern. The supervisor routes user queries to specialized agents (Research Agent for web search, Math Agent for calculations) via DeepAgents' `SubAgentMiddleware`.
 
-- **Braintrust project name**: `langgraph-supervisor`
+- **Braintrust project name**: `agent-supervisor`
 - **Braintrust project ID**: `7052b097-7051-42d9-b7d6-c97ece46b744`
 - **Default model**: `gpt-4o-mini` (all agents, routed through Braintrust Gateway)
 
@@ -64,16 +64,16 @@ Use `bt view logs` for quick browsing and `bt view trace`/`bt view span` for dri
 
 ```bash
 # Browse recent logs (default 1h window)
-bt view logs -p langgraph-supervisor --window 48h --json --limit 50 --non-interactive
+bt view logs -p agent-supervisor --window 48h --json --limit 50 --non-interactive
 
 # Filter logs
-bt view logs -p langgraph-supervisor --window 48h --search "error" --non-interactive
+bt view logs -p agent-supervisor --window 48h --search "error" --non-interactive
 
 # Drill into a specific trace
-bt view trace -p langgraph-supervisor --trace-id <ROOT_SPAN_ID> --json --non-interactive
+bt view trace -p agent-supervisor --trace-id <ROOT_SPAN_ID> --json --non-interactive
 
 # View a specific span
-bt view span -p langgraph-supervisor --id <SPAN_ID> --json --non-interactive
+bt view span -p agent-supervisor --id <SPAN_ID> --json --non-interactive
 ```
 
 Always pass `--non-interactive` to avoid interactive prompts.
@@ -103,7 +103,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 braintrust.login(api_key=os.getenv("BRAINTRUST_API_KEY"))
-dataset = braintrust.init_dataset(project="langgraph-supervisor", name="Supervisor Agent Dataset")
+dataset = braintrust.init_dataset(project=PROJECTagent-supervisor", name="Supervisor Agent Dataset")
 ```
 
 #### Filtering by dataset tag

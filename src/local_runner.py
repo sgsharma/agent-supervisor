@@ -3,6 +3,7 @@ import os
 
 from braintrust_langchain import BraintrustCallbackHandler
 from dotenv import load_dotenv
+from evals.eval_gateway_model_matrix import PROJECT_NAME
 from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.panel import Panel
@@ -32,7 +33,7 @@ def main():
 
     # Initialize Braintrust logging for the session
     logger = braintrust.init_logger(
-        project="langgraph-supervisor",
+        project=PROJECT_NAME
     )
 
     # Create callback handler for tracing

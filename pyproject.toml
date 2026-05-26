@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "langgraph-supervisor"
+name = "agent-supervisor"
 version = "0.1.0"
 description = "A multi-agent AI system built with LangGraph that intelligently routes user queries between specialized agents"
 readme = "README.md"
@@ -55,12 +55,12 @@ dev = [
 ]
 
 [project.scripts]
-langgraph-supervisor = "src.local_runner:main"
+agent-supervisor = "src.local_runner:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/langgraph-supervisor"
-Repository = "https://github.com/yourusername/langgraph-supervisor"
-Issues = "https://github.com/yourusername/langgraph-supervisor/issues"
+Homepage = "https://github.com/yourusername/agent-supervisor"
+Repository = "https://github.com/yourusername/agent-supervisor"
+Issues = "https://github.com/yourusername/agent-supervisor/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]

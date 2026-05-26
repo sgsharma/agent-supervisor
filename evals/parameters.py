@@ -1,5 +1,6 @@
 """Saved Braintrust parameter definitions for evals."""
 
+import os
 from typing import Any, cast
 
 from braintrust import EvalParameters, projects
@@ -15,7 +16,7 @@ from src.config import (
     DEFAULT_SYSTEM_PROMPT,
 )
 
-PROJECT_NAME = "langgraph-supervisor"
+PROJECT_NAME = os.getenv("BRAINTRUST_PROJECT", "agent-supervisor")
 SUPERVISOR_EVAL_PARAMETERS_NAME = "Supervisor Eval Config"
 SUPERVISOR_EVAL_PARAMETERS_SLUG = "supervisor-eval-config"
 

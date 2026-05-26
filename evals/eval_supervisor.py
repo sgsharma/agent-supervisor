@@ -286,6 +286,8 @@ response_quality_scorer = LLMClassifier(
     choice_scores={"EXCELLENT": 1.0, "GOOD": 0.75, "FAIR": 0.5, "POOR": 0.0},
     use_cot=True,
     model="gpt-4o",
+    base_url=os.getenv("BRAINTRUST_GATEWAY_URL", DEFAULT_BRAINTRUST_GATEWAY_URL),
+    api_key=os.getenv("BRAINTRUST_API_KEY"),
 )
 
 
@@ -317,14 +319,14 @@ saved_parameters = load_parameters(
 
 
 def get_dataset(
-    dataset_name: str = "Supervisor Agent Dataset",
+    dataset_name: str = "Tool Routing Correctness",
     tag: Optional[str] = None,
 ):
     """Load a dataset, optionally filtered by tag via EVAL_TAG env var."""
     dataset_name = os.getenv("EVAL_DATASET", dataset_name)
     tag = os.getenv("EVAL_TAG", tag)
 
-    kwargs: dict[str, Any] = {"project": "langgraph-supervisor", "name": dataset_name}
+    kwargs: dict[str, Any] = {"project": "agent-supervisor", "name": dataset_name}
     if tag:
         kwargs["_internal_btql"] = {"filter": {"btql": f"tags INCLUDES '{tag}'"}}
     return init_dataset(**kwargs)
@@ -332,7 +334,7 @@ def get_dataset(
 
 # Basic evaluation
 Eval(
-    "langgraph-supervisor",
+    "agent-supervisor",
     data=get_dataset(),
     task=run_supervisor_task,
     scores=[

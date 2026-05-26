@@ -21,8 +21,8 @@ from src.config import AgentConfig  # noqa: E402
 
 load_dotenv()
 
-PROJECT_NAME = "langgraph-supervisor"
-DATASET_NAME = "Supervisor Agent Dataset"
+PROJECT_NAME = os.getenv("BRAINTRUST_PROJECT", "agent-supervisor")
+DATASET_NAME = "Tool Routing Correctness"
 
 GATEWAY_BASE_URL = os.getenv(
     "BRAINTRUST_GATEWAY_BASE_URL", "https://gateway.braintrust.dev/v1"
@@ -101,7 +101,7 @@ def _build_task(model: str):
             if hooks and hasattr(hooks, "metadata"):
                 hooks.metadata.update(
                     {
-                        "gateway_base_url": GATEWAY_BASE_URL,
+                        # "gateway_base_url": GATEWAY_BASE_URL,
                         "model": model,
                     }
                 )
@@ -111,7 +111,7 @@ def _build_task(model: str):
             if hooks and hasattr(hooks, "metadata"):
                 hooks.metadata.update(
                     {
-                        "gateway_base_url": GATEWAY_BASE_URL,
+                        # "gateway_base_url": GATEWAY_BASE_URL,
                         "model": model,
                         "error": str(e),
                     }

@@ -89,7 +89,7 @@ graph TB
 
 ```bash
 git clone <repository-url>
-cd langgraph-supervisor
+cd agent-supervisor
 ```
 
 ### 2. Install Dependencies
@@ -223,7 +223,7 @@ Evaluation results are automatically uploaded to your Braintrust dashboard where
 ## 📁 Project Structure
 
 ```
-langgraph-supervisor/
+agent-supervisor/
 ├── src/                          # Main application code
 │   ├── app.py                   # Modal web endpoint (exposes `app` and POST /)
 │   ├── eval_server.py           # Modal remote eval server deployment

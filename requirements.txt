@@ -1,5 +1,5 @@
 langgraph
-langgraph-supervisor
+agent-supervisor
 langchain-tavily
 langchain[openai]
 python-dotenv
