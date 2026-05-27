@@ -2,8 +2,8 @@ name: Self-Improving Agent Flywheel
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: "0 0 * * *"  # midnight UTC daily
+  schedule:
+    - cron: "0 16 */2 * *"  # every other day at 16:00 UTC, ~1h after run_on_schedule.yml finishes
 
 permissions:
   contents: write
@@ -65,10 +65,10 @@ jobs:
           BRAINTRUST_API_KEY=${{ secrets.BRAINTRUST_API_KEY }}
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
-          BRAINTRUST_DEFAULT_PROJECT=langgraph-supervisor
+          BRAINTRUST_DEFAULT_PROJECT=agent-supervisor
           BRAINTRUST_GATEWAY_URL=https://gateway.braintrust.dev
           BRAINTRUST_GATEWAY_BASE_URL=https://gateway.braintrust.dev/v1
-          BRAINTRUST_CC_PROJECT=langgraph-supervisor-claude-code
+          BRAINTRUST_CC_PROJECT=agent-supervisor-claude-code
           TRACE_TO_BRAINTRUST=true
           EOF
 
@@ -88,7 +88,7 @@ jobs:
             }' > .claude/settings.local.json
         env:
           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
-          BRAINTRUST_CC_PROJECT: langgraph-supervisor-claude-code
+          BRAINTRUST_CC_PROJECT: agent-supervisor-claude-code
 
       - name: Run flywheel optimization cycle
         id: flywheel
@@ -104,7 +104,7 @@ jobs:
             ## System context
 
             This is a LangGraph multi-agent supervisor system (Braintrust project:
-            langgraph-supervisor). A supervisor agent routes user queries to two
+            agent-supervisor). A supervisor agent routes user queries to two
             specialized sub-agents:
             - Research Agent: answers questions using Tavily web search
             - Math Agent: performs calculations using add/subtract/multiply/divide tools
@@ -120,20 +120,23 @@ jobs:
             - Supervisor logic: src/agents/deep_agent.py
             - Scorers: scorers.py
 
-            Let production data drive what needs to change.
+            Let production data drive what needs to change. Scope your analysis
+            to the **last 24 hours** of traces only — filter all `bt sql` queries
+            with `created >= NOW() - INTERVAL 1 day`.
 
             When complete, write bt-flywheel-summary.json and bt-flywheel-narrative.md
             to the working directory. Do not directly create PRs, issues, Slack messages,
             Jira tickets, Linear tickets, webhooks, deployment gates, or rollbacks.
             Put any recommended follow-up in recommended_actions.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: claude-haiku-4-5
           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          BRAINTRUST_DEFAULT_PROJECT: langgraph-supervisor
+          BRAINTRUST_DEFAULT_PROJECT: agent-supervisor
           BRAINTRUST_GATEWAY_URL: https://gateway.braintrust.dev
           BRAINTRUST_GATEWAY_BASE_URL: https://gateway.braintrust.dev/v1
-          BRAINTRUST_CC_PROJECT: langgraph-supervisor-claude-code
+          BRAINTRUST_CC_PROJECT: agent-supervisor-claude-code
           BRAINTRUST_CC_DEBUG: "true"
           TRACE_TO_BRAINTRUST: "true"
           CI: "true"

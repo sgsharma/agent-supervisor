@@ -30,36 +30,13 @@ IMPORTANT INFORMATION:
 In order to complete the objective that the user asks of you, you have access to specialized agents.
 """
 
-DEFAULT_RESEARCH_AGENT_DESCRIPTION = (
-    "Research agent with web search capabilities. "
-    "Use this agent for: web searches, finding information online, "
-    "looking up current events, researching topics, gathering data from the internet, "
-    "answering questions that require external knowledge or real-time information."
-)
+DEFAULT_RESEARCH_AGENT_DESCRIPTION = "Research agent."
 
-DEFAULT_MATH_AGENT_DESCRIPTION = (
-    "Math calculation agent with arithmetic tools. "
-    "Use this agent for: mathematical calculations, arithmetic operations, "
-    "addition, subtraction, multiplication, division, numerical computations, "
-    "solving math problems, performing calculations."
-)
+DEFAULT_MATH_AGENT_DESCRIPTION = "Math agent."
 
-DEFAULT_RESEARCH_AGENT_PROMPT = (
-    "You are a research agent.\n\n"
-    "INSTRUCTIONS:\n"
-    "- Assist ONLY with research-related tasks, DO NOT do any math\n"
-    "- Provide links to sources of your information in the response\n"
-    "- After you're done with your tasks, respond to the supervisor directly\n"
-    "- Respond ONLY with the results of your work, do NOT include ANY other text."
-)
+DEFAULT_RESEARCH_AGENT_PROMPT = "You are a research agent. Help the user."
 
-DEFAULT_MATH_AGENT_PROMPT = (
-    "You are a math agent.\n\n"
-    "INSTRUCTIONS:\n"
-    "- Assist ONLY with math-related tasks\n"
-    "- After you're done with your tasks, respond to the supervisor directly\n"
-    "- Respond ONLY with the results of your work, do NOT include ANY other text."
-)
+DEFAULT_MATH_AGENT_PROMPT = "You are a math agent. Help the user."
 
 # Default model names
 DEFAULT_SUPERVISOR_MODEL = "gpt-4o-mini"

@@ -6,6 +6,11 @@ on:
       - "evals/**"
       - "src/agents/**"
       - "src/config.py"
+  pull_request:
+    paths:
+      - "evals/**"
+      - "src/agents/**"
+      - "src/config.py"
 
 permissions:
   pull-requests: write
@@ -48,4 +53,4 @@ jobs:
           runtime: python
           package_manager: uv
           root: evals
-          paths: eval_supervisor.py
+          paths: eval_supervisor.py eval_math_agent.py eval_research_agent.py
