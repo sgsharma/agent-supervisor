@@ -112,35 +112,15 @@ BRAINTRUST_API_KEY=your_braintrust_api_key_here
 ENDPOINT_AUTH_TOKEN=your_long_random_token
 ```
 
-### 4. Run the Application (choose one)
+### 4. Run the Application
 
-- Local CLI runner:
+Local CLI runner:
 
 ```bash
 python -m src.local_runner
 ```
 
-- Modal web endpoint (development):
-
-```bash
-modal serve src/app.py
-```
-
-Then call it with (Authorization header required; send the question in `q`):
-
-```bash
-curl -X POST \
-  -H "Authorization: Bearer $ENDPOINT_AUTH_TOKEN" \
-  -H 'Content-Type: application/json' \
-  --data '{"q": "What is 2 + 2?"}' \
-  $(modal url)
-```
-
-- Modal deploy (persistent):
-
-```bash
-modal deploy src/app.py
-```
+To deploy the remote eval server to Modal, see [Remote Eval Server on Modal](#remote-eval-server-on-modal) below.
 
 ## 💬 Usage Examples
 
@@ -225,7 +205,6 @@ Evaluation results are automatically uploaded to your Braintrust dashboard where
 ```
 agent-supervisor/
 ├── src/                          # Main application code
-│   ├── app.py                   # Modal web endpoint (exposes `app` and POST /)
 │   ├── eval_server.py           # Modal remote eval server deployment
 │   ├── local_runner.py          # Local CLI runner for interactive use
 │   ├── agent_graph.py           # Agent/supervisor construction and tracing
@@ -255,7 +234,7 @@ agent-supervisor/
 
 ### Agent Customization
 
-Modify agent behavior in `src/app.py`:
+Modify agent behavior in `src/agents/`:
 
 ```python
 # Customize math agent
@@ -293,7 +272,7 @@ supervisor = create_supervisor(
 
 ### Adding New Agents
 
-1. Create agent in `src/app.py`:
+1. Create agent in `src/agents/`:
 ```python
 new_agent = create_react_agent(
     model="openai:gpt-4.1",

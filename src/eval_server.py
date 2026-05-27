@@ -17,7 +17,7 @@ modal_image = (
     .add_local_python_source("evals")
 )
 
-app = modal.App("langgraph-supervisor-eval-server", image=modal_image)
+app = modal.App("agent-supervisor-eval-server", image=modal_image)
 
 # Always read secrets from local .env and send them as a Secret
 _secrets = [modal.Secret.from_dotenv()]
