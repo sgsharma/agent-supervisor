@@ -8,3 +8,4 @@ node_modules/
 session-recap*
 uv.lock
 docs/plans/
+EXPLAINER.md
