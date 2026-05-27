@@ -55,8 +55,8 @@ jobs:
       - name: Install bt-flywheel skill
         run: |
           mkdir -p .claude/skills
-          curl -fsSL https://github.com/dpguthrie/braintrust-flywheel-plugin/archive/refs/heads/main.tar.gz \
-            | tar -xz --strip-components=2 -C .claude/skills braintrust-flywheel-plugin-main/skills/bt-flywheel
+          curl -fsSL https://github.com/dpguthrie/braintrust-skills/archive/refs/heads/main.tar.gz \
+            | tar -xz --strip-components=2 -C .claude/skills braintrust-skills-main/skills/bt-flywheel
 
       - name: Write .env for eval invocations
         run: |
