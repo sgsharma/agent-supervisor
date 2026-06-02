@@ -3,7 +3,7 @@ name: Self-Improving Agent Flywheel
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 16 */2 * *"  # every other day at 16:00 UTC, ~1h after run_on_schedule.yml finishes
+    - cron: "37 16 */2 * *"  # every other day at 16:37 UTC, ~1h after run_on_schedule.yml finishes; off-:00 to avoid GitHub's contended top-of-hour scheduler slot
 
 permissions:
   contents: write

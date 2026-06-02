@@ -1,7 +1,7 @@
 name: Daily supervisor trace generation
 on:
   schedule:
-    - cron: "0 15 * * *"  # daily at 15:00 UTC (~7AM PST winter / 8AM PDT summer)
+    - cron: "23 15 * * *"  # daily at 15:23 UTC (~7AM PST winter / 8AM PDT summer); off-:00 to avoid GitHub's contended top-of-hour scheduler slot
   workflow_dispatch:
 
 jobs:
