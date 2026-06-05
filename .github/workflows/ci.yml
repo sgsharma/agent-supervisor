@@ -2,15 +2,21 @@ name: Run Python evals
 
 on:
   push:
+    branches: [main]
     paths:
       - "evals/**"
-      - "src/agents/**"
-      - "src/config.py"
+      - "src/**"
+      - "pyproject.toml"
+      - "uv.lock"
   pull_request:
     paths:
       - "evals/**"
-      - "src/agents/**"
-      - "src/config.py"
+      - "src/**"
+      - "pyproject.toml"
+      - "uv.lock"
+  schedule:
+    - cron: "11 14 * * *"  # daily at 14:11 UTC, before the 15:23 trace-gen run; off-:00 to avoid GitHub's contended top-of-hour scheduler slot
+  workflow_dispatch:
 
 permissions:
   pull-requests: write
