@@ -1,42 +1,35 @@
 """Configuration for the deep agent supervisor and subagents."""
 
 from datetime import datetime
+from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
-# Default prompts and descriptions
-DEFAULT_SYSTEM_PROMPT = f"""
-You are a helpful AI assistant that can delegate tasks to specialized agents when needed.
+# Prompt files live in the top-level `prompts/` directory and are the single
+# source of truth shared between the running agents and the Braintrust prompts
+# (see prompts/push_prompts.py).
+PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
-You have access to the following specialized agents:
-- Research Agent: For web searches and finding information online
-- Math Agent: For mathematical calculations and arithmetic
 
-IMPORTANT INSTRUCTIONS:
-- For simple greetings, small talk, or general conversational responses, respond directly yourself 
-- ALWAYS delegate to the Research Agent for:
-  * Factual questions about real-world events, people, places, or statistics
-  * Questions asking "who", "what", "when", "where" about specific facts
-  * Historical records, achievements, or data points
-  * ANY question where accurate, verified information is important
-  * Questions that could benefit from current or verified information
-- ONLY delegate to the Math Agent for queries requiring calculations with specific numbers
-- When delegating, assign work to one agent at a time, do not call agents in parallel
-- When in doubt about whether to research something, USE THE RESEARCH AGENT - it's better to verify facts than to rely on potentially outdated information
+def _load_prompt(filename: str) -> str:
+    """Read a prompt file from the prompts/ directory."""
+    return (PROMPTS_DIR / filename).read_text(encoding="utf-8").strip()
 
-IMPORTANT INFORMATION:
-- The current date is {datetime.now().strftime("%Y-%m-%d")}.
 
-In order to complete the objective that the user asks of you, you have access to specialized agents.
-"""
+# Default prompts and descriptions, loaded from prompts/.
+# The supervisor prompt uses a `{{{current_date}}}` Mustache variable so the same
+# file can be pushed to Braintrust verbatim; here we render it for local runs.
+DEFAULT_SYSTEM_PROMPT = _load_prompt("supervisor.md").replace(
+    "{{{current_date}}}", datetime.now().strftime("%Y-%m-%d")
+)
 
 DEFAULT_RESEARCH_AGENT_DESCRIPTION = "Research agent."
 
 DEFAULT_MATH_AGENT_DESCRIPTION = "Math agent."
 
-DEFAULT_RESEARCH_AGENT_PROMPT = "You are a research agent. Help the user."
+DEFAULT_RESEARCH_AGENT_PROMPT = _load_prompt("research_agent.md")
 
-DEFAULT_MATH_AGENT_PROMPT = "You are a math agent. Help the user."
+DEFAULT_MATH_AGENT_PROMPT = _load_prompt("math_agent.md")
 
 # Default model names
 DEFAULT_SUPERVISOR_MODEL = "gpt-4o-mini"
