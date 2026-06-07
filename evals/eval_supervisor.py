@@ -226,13 +226,45 @@ async def routing_accuracy_scorer(input, output, expected, metadata, trace):
         "C": 0.3,
         "D": 0.0,
     }
-    spans = await trace.get_spans(span_type=["task"])
-    agents_called_str = "None (supervisor answered directly)"
+
     agents_called = []
-    for span in spans:
-        span_name = span.span_attributes.get("name", None)
-        if span_name in ["MathAgent", "ResearchAgent"]:
-            agents_called.append(span_name)
+    agents_called_str = "None (supervisor answered directly)"
+
+    # Try to extract agents from the output messages
+    messages = output.get("messages", [])
+    for msg in messages:
+        if isinstance(msg, dict):
+            # Check for tool calls that invoke agents
+            if "tool_calls" in msg and msg["tool_calls"]:
+                for tc in msg["tool_calls"]:
+                    if isinstance(tc, dict):
+                        tool_name = tc.get("name", "")
+                        if tool_name == "task":
+                            # Check args for subagent_type
+                            args = tc.get("args", {})
+                            if isinstance(args, dict):
+                                subagent = args.get("subagent_type")
+                                if subagent in ["ResearchAgent", "MathAgent"]:
+                                    if subagent not in agents_called:
+                                        agents_called.append(subagent)
+            # Also check for agent names in span names (from nested spans)
+            if "span_name" in msg:
+                if msg["span_name"] in ["MathAgent", "ResearchAgent"]:
+                    if msg["span_name"] not in agents_called:
+                        agents_called.append(msg["span_name"])
+
+    # Fallback: try to get spans from trace if available
+    if not agents_called and trace:
+        try:
+            spans = await trace.get_spans(span_type=["task"])
+            for span in spans:
+                span_name = span.span_attributes.get("name", None) if hasattr(span, "span_attributes") else None
+                if span_name in ["MathAgent", "ResearchAgent"]:
+                    if span_name not in agents_called:
+                        agents_called.append(span_name)
+        except Exception:
+            # Silently continue if trace.get_spans fails
+            pass
 
     if agents_called:
         agents_called_str = ", ".join(agents_called)
@@ -245,14 +277,14 @@ async def routing_accuracy_scorer(input, output, expected, metadata, trace):
         input=[{"role": "user", "content": prompt}],
         text_format=RoutingAccuracyOutput,
     )
-    output = response.output_parsed
+    output_obj = response.output_parsed
     return {
         "name": "Routing Accuracy",
-        "score": choice_map.get(output.choice, 0.0) if output else 0.0,
+        "score": choice_map.get(output_obj.choice, 0.0) if output_obj else 0.0,
         "metadata": {
             "agents_called": agents_called_str,
-            "reasoning": output.reasoning if output else "No output",
-            "choice": output.choice if output else "D",
+            "reasoning": output_obj.reasoning if output_obj else "No output",
+            "choice": output_obj.choice if output_obj else "D",
         },
     }
 
