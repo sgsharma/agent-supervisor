@@ -13,20 +13,14 @@ if str(project_root) not in sys.path:
 
 from braintrust import Eval, load_parameters  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
+from langchain_core.messages import HumanMessage
 
-from evals.parameters import (  # noqa: E402
-    MATH_AGENT_EVAL_PARAMETERS_SLUG,
-    MATH_AGENT_PROMPT_PARAM,
-    PROJECT_NAME,
-    parse_prompt_param,
-)
-from scorers.math import (  # noqa: E402
-    calculation_accuracy_scorer,
-    calculation_correctness_scorer,
-    efficiency_scorer,
-    response_format_scorer,
-    tool_usage_scorer,
-)
+from evals.parameters import (MATH_AGENT_EVAL_PARAMETERS_SLUG,  # noqa: E402
+                              MATH_AGENT_PROMPT_PARAM, PROJECT_NAME,
+                              parse_prompt_param)
+from scorers.math import (calculation_accuracy_scorer,  # noqa: E402
+                          calculation_correctness_scorer, efficiency_scorer,
+                          response_format_scorer, tool_usage_scorer)
 from src.agents.math_agent import get_math_agent  # noqa: E402
 from src.config import DEFAULT_MATH_MODEL  # noqa: E402
 
@@ -85,7 +79,8 @@ async def run_math_task(input: dict, hooks: Any = None) -> dict:
         )
 
         # Run the agent
-        result = await agent.ainvoke({"messages": input["messages"]})
+        result = await agent.ainvoke({"messages": [HumanMessage(content=input["query"])]})
+        # result = await agent.ainvoke({"messages": input["messages"]})
 
         # Extract messages
         messages = result.get("messages", []) if isinstance(result, dict) else []

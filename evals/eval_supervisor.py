@@ -165,6 +165,7 @@ def get_dataset(
 # Basic evaluation
 Eval(
     "agent-supervisor",
+    experiment_name="supervisor-agent",
     data=get_dataset(),
     task=run_supervisor_task,
     scores=[

@@ -13,19 +13,14 @@ if str(project_root) not in sys.path:
 
 from braintrust import Eval, load_parameters  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
+from langchain_core.messages import HumanMessage
 
-from evals.parameters import (  # noqa: E402
-    PROJECT_NAME,
-    RESEARCH_AGENT_EVAL_PARAMETERS_SLUG,
-    RESEARCH_AGENT_PROMPT_PARAM,
-    parse_prompt_param,
-)
-from scorers.research import (  # noqa: E402
-    answer_quality_scorer,
-    efficiency_scorer,
-    source_attribution_scorer,
-    web_search_usage_scorer,
-)
+from evals.parameters import (PROJECT_NAME,  # noqa: E402
+                              RESEARCH_AGENT_EVAL_PARAMETERS_SLUG,
+                              RESEARCH_AGENT_PROMPT_PARAM, parse_prompt_param)
+from scorers.research import (answer_quality_scorer,  # noqa: E402
+                              efficiency_scorer, source_attribution_scorer,
+                              web_search_usage_scorer)
 from src.agents.research_agent import get_research_agent  # noqa: E402
 from src.config import DEFAULT_RESEARCH_MODEL  # noqa: E402
 
@@ -86,7 +81,7 @@ async def run_research_task(input: dict, hooks: Any = None) -> dict:
         )
 
         # Run the agent
-        result = await agent.ainvoke({"messages": input["messages"]})
+        result = await agent.ainvoke({"messages": [HumanMessage(content=input["query"])]})
 
         # Extract messages
         messages = result.get("messages", []) if isinstance(result, dict) else []
