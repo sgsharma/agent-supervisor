@@ -145,7 +145,6 @@ jobs:
       - name: Detect code changes
         id: changes
         run: |
-          git add -- src/ evals/ scorers/ pyproject.toml uv.lock
           if git diff --cached --quiet; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
@@ -223,9 +222,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
+          git add -- src/ evals/ scorers.py pyproject.toml uv.lock
           git commit -m "chore(flywheel): automated agent optimization ${DATE}"
           git fetch origin main
-          git rebase origin/main
+          git rebase --autostash origin/main
 
           if git diff --name-only origin/main...HEAD | grep -Eq '^\.github/workflows/'; then
             echo "Refusing to push PR branch because it changes GitHub workflow files."
