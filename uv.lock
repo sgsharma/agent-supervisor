@@ -9,6 +9,57 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "agent-supervisor"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "autoevals" },
+    { name = "braintrust" },
+    { name = "braintrust-langchain" },
+    { name = "deepagents" },
+    { name = "fastapi", extra = ["standard"] },
+    { name = "ipython", version = "9.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "ipython", version = "9.11.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "langchain", extra = ["openai"] },
+    { name = "langchain-anthropic" },
+    { name = "langchain-core" },
+    { name = "langchain-tavily" },
+    { name = "modal" },
+    { name = "python-dotenv" },
+    { name = "rich" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "black" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "autoevals", specifier = "<0.1.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
+    { name = "braintrust", specifier = "==0.23.0" },
+    { name = "braintrust-langchain", specifier = "<0.3.0" },
+    { name = "deepagents", specifier = "<0.4.0" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.119.1" },
+    { name = "ipython", specifier = ">=9.6.0" },
+    { name = "langchain", extras = ["openai"], specifier = "<1.3.0" },
+    { name = "langchain-anthropic", specifier = "<1.4.0" },
+    { name = "langchain-core", specifier = "<1.3.0" },
+    { name = "langchain-tavily", specifier = "<0.3.0" },
+    { name = "modal", specifier = ">=1.2.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "rich", specifier = ">=14.2.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },
+]
+provides-extras = ["dev"]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -263,21 +314,24 @@ wheels = [
 
 [[package]]
 name = "braintrust"
-version = "0.10.0"
-source = { git = "https://github.com/braintrustdata/braintrust-sdk-python?subdirectory=py&rev=main#a8144eabce4ef1a46257be77c8055bd3fc64978c" }
+version = "0.23.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "chevron" },
     { name = "exceptiongroup" },
     { name = "gitpython" },
     { name = "jsonschema" },
     { name = "packaging" },
-    { name = "python-dotenv" },
     { name = "python-slugify" },
     { name = "requests" },
     { name = "sseclient-py" },
     { name = "tqdm" },
     { name = "typing-extensions" },
     { name = "wrapt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/10/df/2bc0153c42379ba30dd17579afb6dcfe59b6232eb0d7fea38786625d0e9a/braintrust-0.23.0.tar.gz", hash = "sha256:adcb3a8601114f06b006509504d03289f8e85446c43300b582fe2a18c19f7a39", size = 643410, upload-time = "2026-05-28T17:42:06.591Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/2c/0f8e9602b58f81a9eb92a7bd6bf012eb52d786191514ac7c6db3f78e379d/braintrust-0.23.0-py3-none-any.whl", hash = "sha256:aeffbb4d947b7d77839675683920e1a981f7745cdff4035b044bafb5bfbf5127", size = 752462, upload-time = "2026-05-28T17:42:04.894Z" },
 ]
 
 [[package]]
@@ -969,14 +1023,14 @@ wheels = [
 
 [[package]]
 name = "gitpython"
-version = "3.1.46"
+version = "3.1.50"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "gitdb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/df/b5/59d16470a1f0dfe8c793f9ef56fd3826093fc52b3bd96d6b9d6c26c7e27b/gitpython-3.1.46.tar.gz", hash = "sha256:400124c7d0ef4ea03f7310ac2fbf7151e09ff97f2a3288d64a440c584a29c37f", size = 215371, upload-time = "2026-01-01T15:37:32.073Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/f6/354ae6491228b5eb40e10d89c4d13c651fe1cf7556e35ebdded50cff57ce/gitpython-3.1.50.tar.gz", hash = "sha256:80da2d12504d52e1f998772dc5baf6e553f8d2fcfe1fcc226c9d9a2ee3372dcc", size = 219798, upload-time = "2026-05-06T04:01:26.571Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/09/e21df6aef1e1ffc0c816f0522ddc3f6dcded766c3261813131c78a704470/gitpython-3.1.46-py3-none-any.whl", hash = "sha256:79812ed143d9d25b6d176a10bb511de0f9c67b1fa641d82097b0ab90398a2058", size = 208620, upload-time = "2026-01-01T15:37:30.574Z" },
+    { url = "https://files.pythonhosted.org/packages/20/7a/1c6e3562dfd8950adbb11ffbc65d21e7c89d01a6e4f137fa981056de25c5/gitpython-3.1.50-py3-none-any.whl", hash = "sha256:d352abe2908d07355014abdd21ddf798c2a961469239afec4962e9da884858f9", size = 212507, upload-time = "2026-05-06T04:01:23.799Z" },
 ]
 
 [[package]]
@@ -1524,57 +1578,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/fd/a1/012f0e0f5c9fd26f9
 wheels = [
     { url = "https://files.pythonhosted.org/packages/17/4d/4f796e86b03878ab20d9b30aaed1ad459eda71a5c5b67f7cfe712f3548f2/langgraph_sdk-0.3.12-py3-none-any.whl", hash = "sha256:44323804965d6ec2a07127b3cf08a0428ea6deaeb172c2d478d5cd25540e3327", size = 95834, upload-time = "2026-03-18T22:15:53.545Z" },
 ]
-
-[[package]]
-name = "agent-supervisor"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "autoevals" },
-    { name = "braintrust" },
-    { name = "braintrust-langchain" },
-    { name = "deepagents" },
-    { name = "fastapi", extra = ["standard"] },
-    { name = "ipython", version = "9.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "ipython", version = "9.11.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "langchain", extra = ["openai"] },
-    { name = "langchain-anthropic" },
-    { name = "langchain-core" },
-    { name = "langchain-tavily" },
-    { name = "modal" },
-    { name = "python-dotenv" },
-    { name = "rich" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "black" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "autoevals", specifier = "<0.1.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
-    { name = "braintrust", git = "https://github.com/braintrustdata/braintrust-sdk-python?subdirectory=py&rev=main" },
-    { name = "braintrust-langchain", specifier = "<0.3.0" },
-    { name = "deepagents", specifier = "<0.4.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.119.1" },
-    { name = "ipython", specifier = ">=9.6.0" },
-    { name = "langchain", extras = ["openai"], specifier = "<1.3.0" },
-    { name = "langchain-anthropic", specifier = "<1.4.0" },
-    { name = "langchain-core", specifier = "<1.3.0" },
-    { name = "langchain-tavily", specifier = "<0.3.0" },
-    { name = "modal", specifier = ">=1.2.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },
-    { name = "python-dotenv", specifier = ">=1.1.1" },
-    { name = "rich", specifier = ">=14.2.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "langsmith"
