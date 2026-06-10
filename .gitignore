@@ -7,7 +7,7 @@ __pycache__/
 node_modules/
 session-recap*
 uv.lock
-docs/plans/
+docs/
 EXPLAINER.md
 
 # bt CLI generated function runners (regenerated on each `bt functions push`)

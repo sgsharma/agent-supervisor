@@ -1,26 +1,37 @@
-# Agent Supervisor
+# Agent-supervisor
 
-A multi-agent AI system built with LangGraph that intelligently routes user queries between specialized agents for optimal task handling.
+A multi-agent system built with LangGraph (via DeepAgents' `SubAgentMiddleware`)
+using a **supervisor pattern**. A supervisor routes user queries to specialized
+sub-agents, and the whole system is instrumented with Braintrust for evals,
+observability, and an automated self-improvement flywheel. All agents default to
+`gpt-4o-mini`, routed through the Braintrust Gateway.
 
-## 🎯 Overview
+**Braintrust project:** `agent-supervisor`
 
-This project implements a **supervisor pattern** using LangGraph to manage two specialized AI agents:
+---
 
-- **🧮 Math Agent**: Handles mathematical calculations, arithmetic, and numerical problems
-- **🔍 Research Agent**: Manages factual queries, web searches, and information retrieval
+## Agents
 
-The supervisor intelligently routes user queries to the appropriate agent based on the content and context of the request.
+The supervisor is defined in `src/agents/deep_agent.py` (`get_supervisor()`) and
+delegates to two specialized sub-agents. Prompts and routing descriptions live in
+`prompts/` and are wired through `src/config.py` (`AgentConfig`).
+
+| Agent | File | Tools | Role |
+|-------|------|-------|------|
+| **Supervisor** | `src/agents/deep_agent.py` | (routing) | Routes each query to the right sub-agent(s), or answers simple/conversational queries directly. |
+| **Math Agent** | `src/agents/math_agent.py` | `add`, `subtract`, `multiply`, `divide` | Arithmetic, equations, and numerical computation. |
+| **Research Agent** | `src/agents/research_agent.py` | Tavily web search | Factual lookups, current events, and information retrieval. |
 
 ## 🏗️ Architecture Diagram
 
 ```mermaid
 graph TB
     User["👤 User"] 
-    Supervisor["🎯 Supervisor Agent<br/>(gpt-4.1)"]
+    Supervisor["🎯 Supervisor Agent<br/>(gpt-4o-mini)"]
     
     subgraph "Specialized Agents"
-        MathAgent["🧮 Math Agent<br/>(gpt-4.1)"]
-        ResearchAgent["🔍 Research Agent<br/>(gpt-4.1)"]
+        MathAgent["🧮 Math Agent<br/>(gpt-4o-mini)"]
+        ResearchAgent["🔍 Research Agent<br/>(gpt-4o-mini)"]
     end
     
     subgraph "Math Tools"
@@ -60,48 +71,77 @@ graph TB
     class Add,Subtract,Multiply,Divide,WebSearch toolClass
 ```
 
-## ✨ Features
+---
+## 1. Prompts
 
-- **Intelligent Routing**: Automatic task delegation to specialized agents
-- **Rich UI**: Beautiful terminal interface with colors and progress indicators
-- **Comprehensive Evaluation**: LLM-as-a-Judge evaluation system using Braintrust
-- **Real-time Processing**: Streaming responses with live updates
-- **Error Handling**: Robust error management and fallback mechanisms
-
-## 🛠️ Technology Stack
-
-- **[LangGraph](https://langchain-ai.github.io/langgraph/)**: Multi-agent workflow orchestration
-- **[LangChain](https://langchain.com/)**: LLM framework and integrations
-- **[Braintrust](https://braintrust.dev/)**: AI evaluation and observability
-- **[Rich](https://rich.readthedocs.io/)**: Terminal UI enhancements
-- **[Tavily](https://tavily.com/)**: Web search API for research tasks
-
-## 📋 Prerequisites
-
-- Python 3.9+
-- OpenAI API key
-- Tavily API key  
-- Braintrust API key
-
-## 🚀 Quick Start
-
-### 1. Clone the Repository
+- Prompts live in the `prompts/` directory, split by agent. You can manually push prompts to Braintrust
 
 ```bash
-git clone <repository-url>
-cd agent-supervisor
+bt functions push prompts/push_prompts.py --if-exists replace -p agent-supervisor
 ```
 
-### 2. Install Dependencies
+## 2. Evals
 
-Using uv (recommended):
+Eval scripts live in `evals/` and run against Braintrust [datasets](https://www.braintrust.dev/docs/annotate/datasets/create). Prompts and
+models are parameterized via `evals/parameters.py`
+
+This is so [experiments](https://www.braintrust.dev/docs/evaluate/run-evaluations) comparing prompts or models can be
+driven from the Braintrust UI. The saved parameter configs are pushed to Braintrust with:
+
 ```bash
-uv pip install -r requirements.txt
+bt functions push evals/parameters.py --if-exists replace -p agent-supervisor
 ```
 
-CI note: our scheduled workflow uses uv in GitHub Actions for Python setup and dependency install. See `.github/workflows/run_on_schedule.yml` and uv's GitHub guide [Using uv in GitHub Actions](https://docs.astral.sh/uv/guides/integration/github/#setting-up-python).
+Datasets support tag-based filtering via the
+`EVAL_TAG` env var.
 
-### 3. Environment Setup
+| Eval | File | Focus |
+|------|------|-------|
+| **Supervisor** | `eval_supervisor.py` | Routing accuracy, response quality, step efficiency (the main eval). |
+| **Math Agent** | `eval_math_agent.py` | Calculation accuracy and correct tool usage. |
+| **Research Agent** | `eval_research_agent.py` | Web search usage and source attribution. |
+| **Gateway Model Matrix** | `eval_gateway_model_matrix.py` | Compares multiple Gateway-routed models on routing/quality (reuses supervisor scorers by slug). Excluded from CI to avoid expensive sweeps. |
+
+---
+
+## 3. Scorers
+
+- Scorer logic lives in the `scorers/` directory, split by agent:
+(`supervisor.py`, `math.py`, `research.py`) and exported from
+`scorers/__init__.py`. 
+- `scorers/push_scorers.py` registers all 12 with Braintrust
+via `project.scorers.create`. LLM-as-a-judge scorers use `gpt-4o` through the
+[Gateway](https://www.braintrust.dev/docs/deploy/gateway); the rest are deterministic code scorers.
+
+**Supervisor** (`scorers/supervisor.py`)
+- **Routing Accuracy** — trace-based; checks the query reached the right agent(s).
+- **Response Quality** — LLM judge (slug `response-quality`).
+- **Step Efficiency** — bundled code scorer (slug `step-efficiency-bundled`).
+
+**Math** (`scorers/math.py`)
+- **Calculation Accuracy** — expected answer appears in the final response.
+- **Tool Usage** — a valid math tool (`add`/`subtract`/`multiply`/`divide`) was used.
+- **Efficiency** — penalizes excess tool calls.
+- **Response Format** — output formatting check.
+- **Calculation Correctness** — LLM judge.
+
+**Research** (`scorers/research.py`)
+- **Web Search Usage** — search tool was invoked when appropriate.
+- **Source Attribution** — response includes a URL citation.
+- **Efficiency** — ideal is 1–2 searches; penalizes excessive searching.
+- **Answer Quality** — LLM judge.
+
+You can also manually push scorers to Braintrust; most teams prototype in the UI, then push production-ready scorers via the CLI. See Scorers overview for guidance.
+
+```bash
+bt functions push scorers/push_scorers.py --if-exists replace -p agent-supervisor
+```
+
+---
+
+## Quickstart
+
+### 1. Environment Setup
 
 Create a `.env` file in the project root:
 
@@ -112,233 +152,56 @@ BRAINTRUST_API_KEY=your_braintrust_api_key_here
 ENDPOINT_AUTH_TOKEN=your_long_random_token
 ```
 
-### 4. Run the Application
-
-Local CLI runner:
+### 2. Run locally
 
 ```bash
 python -m src.local_runner
 ```
 
-To deploy the remote eval server to Modal, see [Remote Eval Server on Modal](#remote-eval-server-on-modal) below.
-
-## 💬 Usage Examples
-
-### Math Queries
-```
-You: What is 15 + 27?
-🤖: 42
-
-You: Calculate the square root of 169
-🤖: 13
-```
-
-### Research Queries
-```
-You: Who is the mayor of Denver?
-🤖: The current mayor of Denver is Mike Johnston.
-
-You: What is the capital of Japan?
-🤖: The capital of Japan is Tokyo.
-```
-
-### Interactive Commands
-- Type your question and press Enter
-- Use `quit`, `exit`, or `q` to exit the application
-- Ctrl+C for emergency exit
-
-## 📊 Evaluation System
-
-This project includes a comprehensive evaluation framework using **LLM-as-a-Judge** methodology.
-
-### Running Evaluations Locally
+### Run evals locally (source `.env` first so the CLI authenticates):
 
 ```bash
-# Run the evaluation suite locally
-braintrust eval evals/
-
-# Or run with dev server (for playground testing)
-braintrust eval evals/eval_simple.py --dev
+set -a && source .env && set +a
+.venv/bin/braintrust eval evals/                  # all evals
+.venv/bin/braintrust eval evals/eval_supervisor.py # one eval
+EVAL_TAG=production .venv/bin/braintrust eval evals/eval_supervisor.py  # a slice
 ```
 
-### Remote Eval Server on Modal
+---
 
-Deploy the evaluation server to Modal for remote testing from the Braintrust Playground:
+## CI/CD
 
-```bash
-# Deploy to Modal
-modal deploy src/eval_server.py
+Four GitHub Actions workflows (`.github/workflows/`) form a closed
+**production → evaluation → improvement** flywheel. 
 
-# Or test in dev mode first
-modal serve src/eval_server.py
-```
+Note, the CI/CD crons are offset from `:00` to
+dodge GitHub's contended top-of-hour scheduler slot.
 
-Then connect to it from the Braintrust Playground using your Modal URL. See [`docs/MODAL_EVAL_SERVER.md`](docs/MODAL_EVAL_SERVER.md) for detailed instructions.
+| Workflow | File | Trigger | Purpose |
+|----------|------|---------|---------|
+| **Run Python evals** | `ci.yml` | push/PR (on `evals/`, `src/`, deps) + daily `14:11 UTC` | Runs the three agent evals via `braintrustdata/eval-action`, gating changes and bot PRs. |
+| **Daily trace generation** | `run_on_schedule.yml` | daily `15:23 UTC` | Runs `scripts/run_queries.py` to feed fresh production traces into Braintrust. |
+| **Self-Improving Flywheel** | `flywheel.yml` | every other day `16:37 UTC` | Claude Code + the `bt-flywheel` skill analyze the last 24h of traces and open an optimization PR (or a follow-up issue) against the eval-gated baseline. |
+| **Push Braintrust definitions** | `push-braintrust.yml` | push to `main` (on `scorers/`, `prompts/`, `evals/parameters.py`, `src/config.py`, deps) + manual | Publishes scorers, prompts, and eval parameters to Braintrust via `bt functions push` so the server-side copies never drift from source. |
 
-### Evaluation Metrics
+**The loop:**
+1. `run_on_schedule.yml` generates traces from real queries each morning.
+2. `flywheel.yml` analyzes those traces, proposes prompt/config changes, and
+   opens a PR (PR creation requires repo workflow permissions; it refuses to
+   touch `.github/workflows/` files itself).
+3. `ci.yml` runs the evals on that PR — improvements must clear the scorers
+   before a human merges.
+4. On merge, `push-braintrust.yml` publishes the updated prompts, scorers, and
+   eval parameters back to Braintrust, keeping the server-side definitions in
+   sync with `main`.
 
-- **🎯 Routing Accuracy**: Measures correct agent selection
-- **📝 Response Quality**: Assesses answer accuracy and completeness
-- **⚡ Step Efficiency**: Tracks number of steps to completion
-- **🔗 Source Attribution**: Verifies citations and sources
 
-### Configurable Parameters
+Required secrets: 
+- `BRAINTRUST_API_KEY`
+- `OPENAI_API_KEY`
+- `TAVILY_API_KEY`,
+- `ANTHROPIC_API_KEY`
 
-The evaluation system supports parameterized testing of:
-- System prompts (supervisor, agents)
-- Agent routing descriptions
-- Model selections (gpt-4o-mini, gpt-4o, etc.)
+The flywheel uses `claude-haiku-4-5` for cost.
 
-All parameters have sensible defaults defined in `src/config.py`.
-
-### View Results
-
-Evaluation results are automatically uploaded to your Braintrust dashboard where you can:
-- Track performance over time
-- Compare different model versions and prompts
-- Analyze detailed evaluation traces
-- Run A/B tests with different configurations
-- Export results for further analysis
-
-## 📁 Project Structure
-
-```
-agent-supervisor/
-├── src/                          # Main application code
-│   ├── eval_server.py           # Modal remote eval server deployment
-│   ├── local_runner.py          # Local CLI runner for interactive use
-│   ├── agent_graph.py           # Agent/supervisor construction and tracing
-│   ├── config.py                # Centralized configuration and defaults
-│   ├── helpers.py               # Utility functions for UI
-│   ├── agents/                  # Agent implementations
-│   │   ├── deep_agent.py        # Supervisor with subagent routing
-│   │   ├── math_agent.py        # Math calculation agent
-│   │   ├── research_agent.py    # Web research agent
-│   │   ├── state.py             # Agent state definitions
-│   │   └── tracing.py           # Braintrust tracing utilities
-│   └── __init__.py
-├── evals/                       # Evaluation framework
-│   └── eval_simple.py          # LLM-as-a-Judge evaluations with parameters
-├── docs/                        # Documentation
-│   └── MODAL_EVAL_SERVER.md    # Guide for Modal eval server deployment
-├── requirements.txt             # Python dependencies
-├── pyproject.toml              # Project metadata and dependencies
-├── .env.example                # Environment variables template
-├── .gitignore
-├── scripts/
-│   └── run_queries.py           # Generates N LLM questions and hits the endpoint
-└── README.md
-```
-
-## 🔧 Configuration
-
-### Agent Customization
-
-Modify agent behavior in `src/agents/`:
-
-```python
-# Customize math agent
-math_agent = create_react_agent(
-    model="openai:gpt-4.1",
-    tools=[add, multiply, divide],
-    prompt="Your custom math agent prompt...",
-    name="math_agent",
-)
-
-# Customize research agent  
-research_agent = create_react_agent(
-    model="openai:gpt-4.1",
-    tools=[web_search],
-    prompt="Your custom research agent prompt...",
-    name="research_agent",
-)
-```
-
-### Supervisor Behavior
-
-Adjust supervisor routing logic:
-
-```python
-supervisor = create_supervisor(
-    model=init_chat_model("openai:gpt-4.1"),
-    agents=[research_agent, math_agent],
-    prompt="Your custom supervisor prompt...",
-    add_handoff_back_messages=True,
-    output_mode="full_history",
-).compile()
-```
-
-## 🧪 Development
-
-### Adding New Agents
-
-1. Create agent in `src/agents/`:
-```python
-new_agent = create_react_agent(
-    model="openai:gpt-4.1",
-    tools=[your_tools],
-    prompt="Agent prompt...",
-    name="new_agent",
-)
-```
-
-2. Add to supervisor agents list:
-```python
-agents=[research_agent, math_agent, new_agent]
-```
-
-3. Update supervisor prompt to include routing logic
-
-### Adding Evaluation Tests
-
-Extend the evaluation dataset in `evals/eval_simple.py`:
-
-```python
-{
-    "input": {
-        "messages": [
-            {
-                "content": "Your test question",
-                "type": "human",
-                # ... other fields
-            }
-        ]
-    }
-}
-```
-
-## 📈 Performance Monitoring
-
-The system automatically tracks:
-
-- **Token Usage**: Input/output tokens per conversation
-- **Response Times**: End-to-end latency metrics  
-- **Agent Selection**: Routing decision accuracy
-- **Error Rates**: Failed requests and error types
-
-View metrics in your Braintrust dashboard for continuous monitoring and optimization.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Add tests for new functionality in `evals/`
-- Update documentation for API changes
-- Follow existing code style and patterns
-- Ensure all evaluations pass before submitting
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- **Issues**: Report bugs and request features via [GitHub Issues](../../issues)
-- **Discussions**: Join conversations in [GitHub Discussions](../../discussions)
-- **Documentation**: Full docs available at [Project Wiki](../../wiki)
+The flywheel also traces Claude Code's own runs to a separate agent-supervisor-claude-code Braintrust project, and can open a follow-up issue 

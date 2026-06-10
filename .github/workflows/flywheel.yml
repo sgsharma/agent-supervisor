@@ -118,7 +118,7 @@ jobs:
             - Eval files: evals/eval_supervisor.py, evals/eval_math_agent.py, evals/eval_research_agent.py
             - Agent prompts and model config: src/config.py
             - Supervisor logic: src/agents/deep_agent.py
-            - Scorers: scorers.py
+            - Scorers: scorers/supervisor.py, scorers/math.py, scorers/research.py  
 
             Let production data drive what needs to change. Scope your analysis
             to the **last 24 hours** of traces only — filter all `bt sql` queries
@@ -145,7 +145,7 @@ jobs:
       - name: Detect code changes
         id: changes
         run: |
-          git add -- src/ evals/ scorers.py pyproject.toml uv.lock
+          git add -- src/ evals/ scorers/ pyproject.toml uv.lock
           if git diff --cached --quiet; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else

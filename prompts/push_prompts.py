@@ -6,20 +6,30 @@ src/config.py). Publish to Braintrust with:
 
     bt functions push prompts/push_prompts.py --if-exists replace -p agent-supervisor
 
-The supervisor prompt keeps its `{{{current_date}}}` Mustache variable so it stays
-templated in Braintrust; src/config.py renders the date for local runs.
+These are pushed as system-message-only prompts. The conversation comes from the
+dataset row at eval/playground time via the "append dataset messages" setting
+(pointing at the `messages` path), so we do NOT hardcode a `{{{question}}}` user
+turn — that would inject an empty user message and the model would just reply
+with a generic greeting.
+
+The supervisor prompt's `{{{current_date}}}` placeholder is rendered to a concrete
+date at push time, since the playground/eval dataset does not supply a
+`current_date` variable. (src/config.py renders it dynamically for local runs.)
 """
 
+from datetime import datetime
 from pathlib import Path
 
 import braintrust
 
 PROMPTS_DIR = Path(__file__).resolve().parent
 MODEL = "gpt-4o-mini"
+TODAY = datetime.now().strftime("%Y-%m-%d")
 
 
 def _load(filename: str) -> str:
-    return (PROMPTS_DIR / filename).read_text(encoding="utf-8").strip()
+    text = (PROMPTS_DIR / filename).read_text(encoding="utf-8").strip()
+    return text.replace("{{{current_date}}}", TODAY)
 
 
 project = braintrust.projects.create(name="agent-supervisor")
@@ -31,7 +41,6 @@ project.prompts.create(
     model=MODEL,
     messages=[
         {"role": "system", "content": _load("supervisor.md")},
-        {"role": "user", "content": "{{{question}}}"},
     ],
     if_exists="replace",
 )
@@ -43,7 +52,6 @@ project.prompts.create(
     model=MODEL,
     messages=[
         {"role": "system", "content": _load("research_agent.md")},
-        {"role": "user", "content": "{{{question}}}"},
     ],
     if_exists="replace",
 )
@@ -55,7 +63,6 @@ project.prompts.create(
     model=MODEL,
     messages=[
         {"role": "system", "content": _load("math_agent.md")},
-        {"role": "user", "content": "{{{question}}}"},
     ],
     if_exists="replace",
 )

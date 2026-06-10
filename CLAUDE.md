@@ -143,7 +143,7 @@ EVAL_DATASET="My Other Dataset" .venv/bin/braintrust eval evals/eval_supervisor.
 - `evals/eval_math_agent.py` - Math agent eval (calculation accuracy, tool usage)
 - `evals/eval_research_agent.py` - Research agent eval (web search, source attribution)
 - `evals/parameters.py` - Braintrust parameter definitions for prompt experiments
-- `scorers.py` - Custom scorer (StepEfficiencyScorer) registered with Braintrust
+- `scorers/` - All eval scorers, split by agent (`supervisor.py`, `math.py`, `research.py`); `push_scorers.py` registers them all with Braintrust via `project.scorers.create` (push: `bt functions push scorers/push_scorers.py --if-exists replace -p agent-supervisor`)
 
 ## Eval Scorers
 
