@@ -230,13 +230,15 @@ async def run_conversation(conv: Conversation, idx: int) -> bool:
             history.append(HumanMessage(content=user_text))
             result = await supervisor.ainvoke(
                 {"messages": history},
-                metadata={
-                    "customer_id": customer_id,
-                    "conversation_idx": idx,
-                    "turn_index": turn_idx,
-                    "total_turns": len(conv["turns"]),
-                    "conversation_model": model,
+                config = {
+                    "metadata": {
+                        "customer_id": customer_id,
+                        "conversation_idx": idx,
+                        "turn_index": turn_idx,
+                        "total_turns": len(conv["turns"]),
+                        "conversation_model": model,
                     "conversation_tags": conv["tags"],
+                    }
                 },
             )
             messages = result.get("messages", []) if isinstance(result, dict) else []
