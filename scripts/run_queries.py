@@ -7,6 +7,7 @@ and to both subagents (hybrid). Each turn produces its own root trace.
 """
 import argparse
 import asyncio
+import json
 import os
 import random
 import sys
@@ -29,11 +30,29 @@ load_dotenv()
 
 PROJECT_NAME = os.getenv("BRAINTRUST_PROJECT", "agent-supervisor")
 MODEL_POOL = ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo"]
+USERS_FILE = project_root / "data" / "users.json"
 
 
 class Conversation(TypedDict):
     turns: List[str]
     tags: List[str]
+
+
+def load_customer_ids() -> List[str]:
+    with USERS_FILE.open(encoding="utf-8") as users_file:
+        users = json.load(users_file)
+
+    customer_ids = [
+        user["User ID"]
+        for user in users
+        if isinstance(user, dict) and isinstance(user.get("User ID"), str)
+    ]
+    if not customer_ids:
+        raise ValueError(f"No customer IDs found in {USERS_FILE}")
+    return customer_ids
+
+
+CUSTOMER_IDS = load_customer_ids()
 
 
 # 55 scripted conversations. Tags describe the expected routing:
@@ -221,7 +240,7 @@ async def run_conversation(conv: Conversation, idx: int) -> bool:
             math_model=model,
         )
         supervisor = get_supervisor(cfg)
-        customer_id = f"customer_{random.randint(1000, 9999)}"
+        customer_id = random.choice(CUSTOMER_IDS)
 
         print(f"[{idx:03d}] model={model:14s} turns={len(conv['turns'])} tags={','.join(conv['tags'])}")
 
