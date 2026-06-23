@@ -9,6 +9,6 @@ session-recap*
 uv.lock
 docs/
 EXPLAINER.md
-
+bt-sync
 # bt CLI generated function runners (regenerated on each `bt functions push`)
 .bt/functions-runners/
