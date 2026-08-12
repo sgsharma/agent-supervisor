@@ -1,62 +1,62 @@
-name: Run Python evals
+# name: Run Python evals
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - "evals/**"
-      - "src/**"
-      - "pyproject.toml"
-      - "uv.lock"
-  pull_request:
-    paths:
-      - "evals/**"
-      - "src/**"
-      - "pyproject.toml"
-      - "uv.lock"
-  schedule:
-    - cron: "11 14 * * *"  # daily at 14:11 UTC, before the 15:23 trace-gen run; off-:00 to avoid GitHub's contended top-of-hour scheduler slot
-  workflow_dispatch:
+# on:
+#   push:
+#     branches: [main]
+#     paths:
+#       - "evals/**"
+#       - "src/**"
+#       - "pyproject.toml"
+#       - "uv.lock"
+#   pull_request:
+#     paths:
+#       - "evals/**"
+#       - "src/**"
+#       - "pyproject.toml"
+#       - "uv.lock"
+#   schedule:
+#     - cron: "11 14 * * *"  # daily at 14:11 UTC, before the 15:23 trace-gen run; off-:00 to avoid GitHub's contended top-of-hour scheduler slot
+#   workflow_dispatch:
 
-permissions:
-  pull-requests: write
-  contents: read
+# permissions:
+#   pull-requests: write
+#   contents: read
 
-jobs:
-  eval:
-    name: Run evals
-    runs-on: ubuntu-latest
+# jobs:
+#   eval:
+#     name: Run evals
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout
+#         id: checkout
+#         uses: actions/checkout@v5
+#         with:
+#           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: ".python-version"
+#       - name: Set up Python
+#         uses: actions/setup-python@v6
+#         with:
+#           python-version-file: ".python-version"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+#       - name: Install uv
+#         uses: astral-sh/setup-uv@v6
 
-      - name: Install dependencies
-        env:
-          UV_SYSTEM_PYTHON: 1
-        run: |
-          uv sync
+#       - name: Install dependencies
+#         env:
+#           UV_SYSTEM_PYTHON: 1
+#         run: |
+#           uv sync
 
-      - name: Run Evals
-        uses: braintrustdata/eval-action@v1
-        env:
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        with:
-          api_key: ${{ secrets.BRAINTRUST_API_KEY }}
-          runtime: python
-          package_manager: uv
-          root: evals
-          paths: eval_supervisor.py eval_math_agent.py eval_research_agent.py
+#       - name: Run Evals
+#         uses: braintrustdata/eval-action@v1
+#         env:
+#           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+#           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+#           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#         with:
+#           api_key: ${{ secrets.BRAINTRUST_API_KEY }}
+#           runtime: python
+#           package_manager: uv
+#           root: evals
+#           paths: eval_supervisor.py eval_math_agent.py eval_research_agent.py

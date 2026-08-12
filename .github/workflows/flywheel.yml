@@ -1,317 +1,317 @@
-name: Self-Improving Agent Flywheel
+# name: Self-Improving Agent Flywheel
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "37 16 */2 * *"  # every other day at 16:37 UTC, ~1h after run_on_schedule.yml finishes; off-:00 to avoid GitHub's contended top-of-hour scheduler slot
+# on:
+#   workflow_dispatch:
+#   schedule:
+#     - cron: "37 16 */2 * *"  # every other day at 16:37 UTC, ~1h after run_on_schedule.yml finishes; off-:00 to avoid GitHub's contended top-of-hour scheduler slot
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+# permissions:
+#   contents: write
+#   pull-requests: write
+#   issues: write
 
-jobs:
-  flywheel:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+# jobs:
+#   flywheel:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 90
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+#       - name: Install uv
+#         uses: astral-sh/setup-uv@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: "3.12"
 
-      - name: Install Python dependencies
-        run: uv sync
+#       - name: Install Python dependencies
+#         run: uv sync
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: "20"
 
-      - name: Install Claude Code CLI
-        run: npm install -g @anthropic-ai/claude-code
+#       - name: Install Claude Code CLI
+#         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Install Braintrust CLI
-        run: |
-          curl -fsSL https://bt.dev/cli/install.sh | bash
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+#       - name: Install Braintrust CLI
+#         run: |
+#           curl -fsSL https://bt.dev/cli/install.sh | bash
+#           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+#           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
-      - name: Install Braintrust trace plugin
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y -q jq uuid-runtime
-          claude plugin marketplace add braintrustdata/braintrust-claude-plugin
-          claude plugin install trace-claude-code@braintrust-claude-plugin
+#       - name: Install Braintrust trace plugin
+#         run: |
+#           sudo apt-get update
+#           sudo apt-get install -y -q jq uuid-runtime
+#           claude plugin marketplace add braintrustdata/braintrust-claude-plugin
+#           claude plugin install trace-claude-code@braintrust-claude-plugin
 
-      - name: Install bt-flywheel skill
-        run: |
-          mkdir -p .claude/skills
-          curl -fsSL https://github.com/dpguthrie/braintrust-skills/archive/refs/heads/main.tar.gz \
-            | tar -xz --strip-components=2 -C .claude/skills braintrust-skills-main/skills/bt-flywheel
+#       - name: Install bt-flywheel skill
+#         run: |
+#           mkdir -p .claude/skills
+#           curl -fsSL https://github.com/dpguthrie/braintrust-skills/archive/refs/heads/main.tar.gz \
+#             | tar -xz --strip-components=2 -C .claude/skills braintrust-skills-main/skills/bt-flywheel
 
-      - name: Write .env for eval invocations
-        run: |
-          cat > .env << 'EOF'
-          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          BRAINTRUST_API_KEY=${{ secrets.BRAINTRUST_API_KEY }}
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
-          BRAINTRUST_DEFAULT_PROJECT=agent-supervisor
-          BRAINTRUST_GATEWAY_URL=https://gateway.braintrust.dev
-          BRAINTRUST_GATEWAY_BASE_URL=https://gateway.braintrust.dev/v1
-          BRAINTRUST_CC_PROJECT=agent-supervisor-claude-code
-          TRACE_TO_BRAINTRUST=true
-          EOF
+#       - name: Write .env for eval invocations
+#         run: |
+#           cat > .env << 'EOF'
+#           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+#           BRAINTRUST_API_KEY=${{ secrets.BRAINTRUST_API_KEY }}
+#           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+#           TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
+#           BRAINTRUST_DEFAULT_PROJECT=agent-supervisor
+#           BRAINTRUST_GATEWAY_URL=https://gateway.braintrust.dev
+#           BRAINTRUST_GATEWAY_BASE_URL=https://gateway.braintrust.dev/v1
+#           BRAINTRUST_CC_PROJECT=agent-supervisor-claude-code
+#           TRACE_TO_BRAINTRUST=true
+#           EOF
 
-      - name: Configure Claude Code tracing
-        run: |
-          mkdir -p .claude
-          jq -n \
-            --arg api_key "$BRAINTRUST_API_KEY" \
-            --arg project "$BRAINTRUST_CC_PROJECT" \
-            '{
-              env: {
-                TRACE_TO_BRAINTRUST: "true",
-                BRAINTRUST_API_KEY: $api_key,
-                BRAINTRUST_CC_PROJECT: $project,
-                BRAINTRUST_CC_DEBUG: "true"
-              }
-            }' > .claude/settings.local.json
-        env:
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
-          BRAINTRUST_CC_PROJECT: agent-supervisor-claude-code
+#       - name: Configure Claude Code tracing
+#         run: |
+#           mkdir -p .claude
+#           jq -n \
+#             --arg api_key "$BRAINTRUST_API_KEY" \
+#             --arg project "$BRAINTRUST_CC_PROJECT" \
+#             '{
+#               env: {
+#                 TRACE_TO_BRAINTRUST: "true",
+#                 BRAINTRUST_API_KEY: $api_key,
+#                 BRAINTRUST_CC_PROJECT: $project,
+#                 BRAINTRUST_CC_DEBUG: "true"
+#               }
+#             }' > .claude/settings.local.json
+#         env:
+#           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+#           BRAINTRUST_CC_PROJECT: agent-supervisor-claude-code
 
-      - name: Run flywheel optimization cycle
-        id: flywheel
-        run: |
-          claude --print --dangerously-skip-permissions \
-            -p "$FLYWHEEL_PROMPT" \
-            2>&1 | tee flywheel-output.log
-        env:
-          FLYWHEEL_PROMPT: |
-            Use the bt-flywheel skill installed at .claude/skills/bt-flywheel/SKILL.md
-            to run the full self-improvement optimization cycle in autonomous CI mode.
+#       - name: Run flywheel optimization cycle
+#         id: flywheel
+#         run: |
+#           claude --print --dangerously-skip-permissions \
+#             -p "$FLYWHEEL_PROMPT" \
+#             2>&1 | tee flywheel-output.log
+#         env:
+#           FLYWHEEL_PROMPT: |
+#             Use the bt-flywheel skill installed at .claude/skills/bt-flywheel/SKILL.md
+#             to run the full self-improvement optimization cycle in autonomous CI mode.
 
-            ## System context
+#             ## System context
 
-            This is a LangGraph multi-agent supervisor system (Braintrust project:
-            agent-supervisor). A supervisor agent routes user queries to two
-            specialized sub-agents:
-            - Research Agent: answers questions using Tavily web search
-            - Math Agent: performs calculations using add/subtract/multiply/divide tools
+#             This is a LangGraph multi-agent supervisor system (Braintrust project:
+#             agent-supervisor). A supervisor agent routes user queries to two
+#             specialized sub-agents:
+#             - Research Agent: answers questions using Tavily web search
+#             - Math Agent: performs calculations using add/subtract/multiply/divide tools
 
-            ## Key metrics
+#             ## Key metrics
 
-            Routing Accuracy, Response Quality, Step Efficiency (Combined Score aggregates all three).
+#             Routing Accuracy, Response Quality, Step Efficiency (Combined Score aggregates all three).
 
-            ## Where things live
+#             ## Where things live
 
-            - Eval files: evals/eval_supervisor.py, evals/eval_math_agent.py, evals/eval_research_agent.py
-            - Agent prompts and model config: src/config.py
-            - Supervisor logic: src/agents/deep_agent.py
-            - Scorers: scorers/supervisor.py, scorers/math.py, scorers/research.py  
+#             - Eval files: evals/eval_supervisor.py, evals/eval_math_agent.py, evals/eval_research_agent.py
+#             - Agent prompts and model config: src/config.py
+#             - Supervisor logic: src/agents/deep_agent.py
+#             - Scorers: scorers/supervisor.py, scorers/math.py, scorers/research.py  
 
-            Let production data drive what needs to change. Scope your analysis
-            to the **last 24 hours** of traces only — filter all `bt sql` queries
-            with `created >= NOW() - INTERVAL 1 day`.
+#             Let production data drive what needs to change. Scope your analysis
+#             to the **last 24 hours** of traces only — filter all `bt sql` queries
+#             with `created >= NOW() - INTERVAL 1 day`.
 
-            When complete, write bt-flywheel-summary.json and bt-flywheel-narrative.md
-            to the working directory. Do not directly create PRs, issues, Slack messages,
-            Jira tickets, Linear tickets, webhooks, deployment gates, or rollbacks.
-            Put any recommended follow-up in recommended_actions.
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_MODEL: claude-haiku-4-5
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          BRAINTRUST_DEFAULT_PROJECT: agent-supervisor
-          BRAINTRUST_GATEWAY_URL: https://gateway.braintrust.dev
-          BRAINTRUST_GATEWAY_BASE_URL: https://gateway.braintrust.dev/v1
-          BRAINTRUST_CC_PROJECT: agent-supervisor-claude-code
-          BRAINTRUST_CC_DEBUG: "true"
-          TRACE_TO_BRAINTRUST: "true"
-          CI: "true"
-          FLYWHEEL_AUTONOMOUS: "true"
+#             When complete, write bt-flywheel-summary.json and bt-flywheel-narrative.md
+#             to the working directory. Do not directly create PRs, issues, Slack messages,
+#             Jira tickets, Linear tickets, webhooks, deployment gates, or rollbacks.
+#             Put any recommended follow-up in recommended_actions.
+#           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+#           ANTHROPIC_MODEL: claude-haiku-4-5
+#           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+#           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+#           BRAINTRUST_DEFAULT_PROJECT: agent-supervisor
+#           BRAINTRUST_GATEWAY_URL: https://gateway.braintrust.dev
+#           BRAINTRUST_GATEWAY_BASE_URL: https://gateway.braintrust.dev/v1
+#           BRAINTRUST_CC_PROJECT: agent-supervisor-claude-code
+#           BRAINTRUST_CC_DEBUG: "true"
+#           TRACE_TO_BRAINTRUST: "true"
+#           CI: "true"
+#           FLYWHEEL_AUTONOMOUS: "true"
 
-      - name: Detect code changes
-        id: changes
-        run: |
-          if git diff --cached --quiet; then
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-            git diff --cached --stat
-          fi
+#       - name: Detect code changes
+#         id: changes
+#         run: |
+#           if git diff --cached --quiet; then
+#             echo "has_changes=false" >> "$GITHUB_OUTPUT"
+#           else
+#             echo "has_changes=true" >> "$GITHUB_OUTPUT"
+#             git diff --cached --stat
+#           fi
 
-      - name: Prepare narrative
-        id: narrative
-        if: always()
-        run: |
-          if [ -f bt-flywheel-narrative.md ]; then
-            cp bt-flywheel-narrative.md /tmp/narrative.md
-          elif [ -f bt-flywheel-summary.json ]; then
-            echo "*(Narrative not generated - see bt-flywheel-summary.json artifact)*" > /tmp/narrative.md
-            echo "" >> /tmp/narrative.md
-            cat bt-flywheel-summary.json >> /tmp/narrative.md
-          else
-            echo "No narrative or summary generated." > /tmp/narrative.md
-          fi
+#       - name: Prepare narrative
+#         id: narrative
+#         if: always()
+#         run: |
+#           if [ -f bt-flywheel-narrative.md ]; then
+#             cp bt-flywheel-narrative.md /tmp/narrative.md
+#           elif [ -f bt-flywheel-summary.json ]; then
+#             echo "*(Narrative not generated - see bt-flywheel-summary.json artifact)*" > /tmp/narrative.md
+#             echo "" >> /tmp/narrative.md
+#             cat bt-flywheel-summary.json >> /tmp/narrative.md
+#           else
+#             echo "No narrative or summary generated." > /tmp/narrative.md
+#           fi
 
-      - name: Decide follow-up action
-        id: action
-        if: always()
-        run: |
-          SUMMARY="bt-flywheel-summary.json"
-          RECOMMENDED_TYPES=""
-          PRIMARY_PR_TITLE=""
-          PRIMARY_ISSUE_TITLE=""
-          ISSUE_IDEMPOTENCY_KEY=""
+#       - name: Decide follow-up action
+#         id: action
+#         if: always()
+#         run: |
+#           SUMMARY="bt-flywheel-summary.json"
+#           RECOMMENDED_TYPES=""
+#           PRIMARY_PR_TITLE=""
+#           PRIMARY_ISSUE_TITLE=""
+#           ISSUE_IDEMPOTENCY_KEY=""
 
-          sanitize_title() {
-            printf "%s" "$1" | tr '\n\r' ' ' | sed 's/[[:space:]][[:space:]]*/ /g' | cut -c1-120
-          }
+#           sanitize_title() {
+#             printf "%s" "$1" | tr '\n\r' ' ' | sed 's/[[:space:]][[:space:]]*/ /g' | cut -c1-120
+#           }
 
-          if [ -f "$SUMMARY" ]; then
-            RECOMMENDED_TYPES="$(jq -r '[.recommended_actions[]?.type] | join(",")' "$SUMMARY" 2>/dev/null || true)"
-            PRIMARY_PR_TITLE="$(jq -r 'first(.recommended_actions[]? | select(.type == "pull_request") | .title) // empty' "$SUMMARY" 2>/dev/null || true)"
-            PRIMARY_ISSUE_TITLE="$(jq -r 'first(.recommended_actions[]? | select(.type == "issue") | .title) // empty' "$SUMMARY" 2>/dev/null || true)"
-            ISSUE_IDEMPOTENCY_KEY="$(jq -r 'first(.recommended_actions[]? | select(.type == "issue") | .idempotency_key) // empty' "$SUMMARY" 2>/dev/null || true)"
-            jq -r 'first(.recommended_actions[]? | select(.type == "issue") | .body_markdown) // empty' "$SUMMARY" 2>/dev/null > /tmp/recommended-issue.md || true
-          fi
+#           if [ -f "$SUMMARY" ]; then
+#             RECOMMENDED_TYPES="$(jq -r '[.recommended_actions[]?.type] | join(",")' "$SUMMARY" 2>/dev/null || true)"
+#             PRIMARY_PR_TITLE="$(jq -r 'first(.recommended_actions[]? | select(.type == "pull_request") | .title) // empty' "$SUMMARY" 2>/dev/null || true)"
+#             PRIMARY_ISSUE_TITLE="$(jq -r 'first(.recommended_actions[]? | select(.type == "issue") | .title) // empty' "$SUMMARY" 2>/dev/null || true)"
+#             ISSUE_IDEMPOTENCY_KEY="$(jq -r 'first(.recommended_actions[]? | select(.type == "issue") | .idempotency_key) // empty' "$SUMMARY" 2>/dev/null || true)"
+#             jq -r 'first(.recommended_actions[]? | select(.type == "issue") | .body_markdown) // empty' "$SUMMARY" 2>/dev/null > /tmp/recommended-issue.md || true
+#           fi
 
-          if [ ! -s /tmp/recommended-issue.md ]; then
-            cp /tmp/narrative.md /tmp/recommended-issue.md
-          fi
+#           if [ ! -s /tmp/recommended-issue.md ]; then
+#             cp /tmp/narrative.md /tmp/recommended-issue.md
+#           fi
 
-          DATE="$(date -u +%Y-%m-%d)"
-          HAS_CHANGES="${{ steps.changes.outputs.has_changes }}"
-          SHOULD_PR="false"
-          SHOULD_ISSUE="false"
+#           DATE="$(date -u +%Y-%m-%d)"
+#           HAS_CHANGES="${{ steps.changes.outputs.has_changes }}"
+#           SHOULD_PR="false"
+#           SHOULD_ISSUE="false"
 
-          if [ "$HAS_CHANGES" = "true" ] && { [ -z "$RECOMMENDED_TYPES" ] || printf "%s" "$RECOMMENDED_TYPES" | grep -q "pull_request"; }; then
-            SHOULD_PR="true"
-          fi
-          if printf "%s" "$RECOMMENDED_TYPES" | grep -Eq "(^|,)issue(,|$)"; then
-            SHOULD_ISSUE="true"
-          fi
+#           if [ "$HAS_CHANGES" = "true" ] && { [ -z "$RECOMMENDED_TYPES" ] || printf "%s" "$RECOMMENDED_TYPES" | grep -q "pull_request"; }; then
+#             SHOULD_PR="true"
+#           fi
+#           if printf "%s" "$RECOMMENDED_TYPES" | grep -Eq "(^|,)issue(,|$)"; then
+#             SHOULD_ISSUE="true"
+#           fi
 
-          {
-            echo "should_pr=$SHOULD_PR"
-            echo "should_issue=$SHOULD_ISSUE"
-            echo "pr_title=$(sanitize_title "${PRIMARY_PR_TITLE:-Flywheel: Agent optimizations (${DATE})}")"
-            echo "issue_title=$(sanitize_title "${PRIMARY_ISSUE_TITLE:-Flywheel: Follow-up needed (${DATE})}")"
-            echo "issue_idempotency_key=$ISSUE_IDEMPOTENCY_KEY"
-            echo "recommended_types=$RECOMMENDED_TYPES"
-          } >> "$GITHUB_OUTPUT"
+#           {
+#             echo "should_pr=$SHOULD_PR"
+#             echo "should_issue=$SHOULD_ISSUE"
+#             echo "pr_title=$(sanitize_title "${PRIMARY_PR_TITLE:-Flywheel: Agent optimizations (${DATE})}")"
+#             echo "issue_title=$(sanitize_title "${PRIMARY_ISSUE_TITLE:-Flywheel: Follow-up needed (${DATE})}")"
+#             echo "issue_idempotency_key=$ISSUE_IDEMPOTENCY_KEY"
+#             echo "recommended_types=$RECOMMENDED_TYPES"
+#           } >> "$GITHUB_OUTPUT"
 
-      - name: Create pull request
-        if: steps.action.outputs.should_pr == 'true'
-        run: |
-          DATE=$(date -u +%Y-%m-%d)
-          BRANCH="flywheel/${DATE}-${GITHUB_RUN_ID}"
+#       - name: Create pull request
+#         if: steps.action.outputs.should_pr == 'true'
+#         run: |
+#           DATE=$(date -u +%Y-%m-%d)
+#           BRANCH="flywheel/${DATE}-${GITHUB_RUN_ID}"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
-          git add -- src/ evals/ scorers.py pyproject.toml uv.lock
-          git commit -m "chore(flywheel): automated agent optimization ${DATE}"
-          git fetch origin main
-          git rebase --autostash origin/main
+#           git config user.name "github-actions[bot]"
+#           git config user.email "github-actions[bot]@users.noreply.github.com"
+#           git checkout -b "$BRANCH"
+#           git add -- src/ evals/ scorers.py pyproject.toml uv.lock
+#           git commit -m "chore(flywheel): automated agent optimization ${DATE}"
+#           git fetch origin main
+#           git rebase --autostash origin/main
 
-          if git diff --name-only origin/main...HEAD | grep -Eq '^\.github/workflows/'; then
-            echo "Refusing to push PR branch because it changes GitHub workflow files."
-            echo "The default GITHUB_TOKEN cannot create or update workflow files without workflows permission."
-            echo "Open those workflow changes manually, or use a token with workflows permission."
-            exit 1
-          fi
+#           if git diff --name-only origin/main...HEAD | grep -Eq '^\.github/workflows/'; then
+#             echo "Refusing to push PR branch because it changes GitHub workflow files."
+#             echo "The default GITHUB_TOKEN cannot create or update workflow files without workflows permission."
+#             echo "Open those workflow changes manually, or use a token with workflows permission."
+#             exit 1
+#           fi
 
-          git push origin "$BRANCH"
+#           git push origin "$BRANCH"
 
-          gh pr create \
-            --title "$PR_TITLE" \
-            --body-file /tmp/narrative.md \
-            --base main \
-            --head "$BRANCH"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_TITLE: ${{ steps.action.outputs.pr_title }}
+#           gh pr create \
+#             --title "$PR_TITLE" \
+#             --body-file /tmp/narrative.md \
+#             --base main \
+#             --head "$BRANCH"
+#         env:
+#           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           PR_TITLE: ${{ steps.action.outputs.pr_title }}
 
-      - name: Create follow-up issue
-        if: steps.action.outputs.should_issue == 'true'
-        run: |
-          KEY="$ISSUE_IDEMPOTENCY_KEY"
-          if [ -n "$KEY" ]; then
-            EXISTING="$(gh issue list --state open --search "$KEY in:body" --json number --jq '.[0].number // empty')"
-            if [ -n "$EXISTING" ]; then
-              echo "Open issue #${EXISTING} already contains idempotency key ${KEY}; skipping duplicate."
-              exit 0
-            fi
-            {
-              echo ""
-              echo "<!-- bt-flywheel-idempotency-key: ${KEY} -->"
-            } >> /tmp/recommended-issue.md
-          fi
+#       - name: Create follow-up issue
+#         if: steps.action.outputs.should_issue == 'true'
+#         run: |
+#           KEY="$ISSUE_IDEMPOTENCY_KEY"
+#           if [ -n "$KEY" ]; then
+#             EXISTING="$(gh issue list --state open --search "$KEY in:body" --json number --jq '.[0].number // empty')"
+#             if [ -n "$EXISTING" ]; then
+#               echo "Open issue #${EXISTING} already contains idempotency key ${KEY}; skipping duplicate."
+#               exit 0
+#             fi
+#             {
+#               echo ""
+#               echo "<!-- bt-flywheel-idempotency-key: ${KEY} -->"
+#             } >> /tmp/recommended-issue.md
+#           fi
 
-          gh issue create \
-            --title "$ISSUE_TITLE" \
-            --body-file /tmp/recommended-issue.md
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_TITLE: ${{ steps.action.outputs.issue_title }}
-          ISSUE_IDEMPOTENCY_KEY: ${{ steps.action.outputs.issue_idempotency_key }}
+#           gh issue create \
+#             --title "$ISSUE_TITLE" \
+#             --body-file /tmp/recommended-issue.md
+#         env:
+#           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           ISSUE_TITLE: ${{ steps.action.outputs.issue_title }}
+#           ISSUE_IDEMPOTENCY_KEY: ${{ steps.action.outputs.issue_idempotency_key }}
 
-      - name: Write job summary
-        if: always()
-        env:
-          SHOULD_PR: ${{ steps.action.outputs.should_pr }}
-          SHOULD_ISSUE: ${{ steps.action.outputs.should_issue }}
-          RECOMMENDED_TYPES: ${{ steps.action.outputs.recommended_types }}
-        run: |
-          {
-            if [ "$SHOULD_PR" = "true" ]; then
-              echo "## Flywheel Run - Changes Made"
-              echo ""
-              echo "A pull request has been opened with the proposed optimizations."
-            elif [ "$SHOULD_ISSUE" = "true" ]; then
-              echo "## Flywheel Run - Follow-up Issue Created"
-            else
-              echo "## Flywheel Run - No Follow-up Action Executed"
-            fi
-            echo ""
-            echo "Recommended action types: ${RECOMMENDED_TYPES:-none}"
-            echo ""
-            cat /tmp/narrative.md 2>/dev/null || echo "No narrative generated."
-          } >> "$GITHUB_STEP_SUMMARY"
+#       - name: Write job summary
+#         if: always()
+#         env:
+#           SHOULD_PR: ${{ steps.action.outputs.should_pr }}
+#           SHOULD_ISSUE: ${{ steps.action.outputs.should_issue }}
+#           RECOMMENDED_TYPES: ${{ steps.action.outputs.recommended_types }}
+#         run: |
+#           {
+#             if [ "$SHOULD_PR" = "true" ]; then
+#               echo "## Flywheel Run - Changes Made"
+#               echo ""
+#               echo "A pull request has been opened with the proposed optimizations."
+#             elif [ "$SHOULD_ISSUE" = "true" ]; then
+#               echo "## Flywheel Run - Follow-up Issue Created"
+#             else
+#               echo "## Flywheel Run - No Follow-up Action Executed"
+#             fi
+#             echo ""
+#             echo "Recommended action types: ${RECOMMENDED_TYPES:-none}"
+#             echo ""
+#             cat /tmp/narrative.md 2>/dev/null || echo "No narrative generated."
+#           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Collect Braintrust trace debug logs
-        if: always()
-        run: |
-          mkdir -p flywheel-debug
-          if [ -f "$HOME/.claude/state/braintrust_hook.log" ]; then
-            cp "$HOME/.claude/state/braintrust_hook.log" flywheel-debug/braintrust_hook.log
-          fi
-          if [ -d "$HOME/.claude/state/braintrust_sessions" ]; then
-            cp -R "$HOME/.claude/state/braintrust_sessions" flywheel-debug/braintrust_sessions
-          fi
+#       - name: Collect Braintrust trace debug logs
+#         if: always()
+#         run: |
+#           mkdir -p flywheel-debug
+#           if [ -f "$HOME/.claude/state/braintrust_hook.log" ]; then
+#             cp "$HOME/.claude/state/braintrust_hook.log" flywheel-debug/braintrust_hook.log
+#           fi
+#           if [ -d "$HOME/.claude/state/braintrust_sessions" ]; then
+#             cp -R "$HOME/.claude/state/braintrust_sessions" flywheel-debug/braintrust_sessions
+#           fi
 
-      - name: Upload run artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flywheel-${{ github.run_id }}
-          path: |
-            bt-flywheel-summary.json
-            bt-flywheel-narrative.md
-            flywheel-output.log
-            flywheel-debug/**
-          if-no-files-found: ignore
-          retention-days: 30
+#       - name: Upload run artifacts
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: flywheel-${{ github.run_id }}
+#           path: |
+#             bt-flywheel-summary.json
+#             bt-flywheel-narrative.md
+#             flywheel-output.log
+#             flywheel-debug/**
+#           if-no-files-found: ignore
+#           retention-days: 30

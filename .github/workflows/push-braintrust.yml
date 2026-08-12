@@ -1,73 +1,73 @@
-name: Push Braintrust definitions
+# name: Push Braintrust definitions
 
-# Publishes the checked-in scorers, prompts, and eval parameters to Braintrust so
-# the server-side copies never drift from source. All three register declaratively
-# (`project.scorers.create` / `project.prompts.create` / `project.parameters.create`)
-# and are uploaded by `bt functions push`, which harvests each definition type.
+# # Publishes the checked-in scorers, prompts, and eval parameters to Braintrust so
+# # the server-side copies never drift from source. All three register declaratively
+# # (`project.scorers.create` / `project.prompts.create` / `project.parameters.create`)
+# # and are uploaded by `bt functions push`, which harvests each definition type.
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - "scorers/**"
-      - "prompts/**"
-      - "evals/parameters.py"
-      - "src/config.py" # prompts/ and parameters derive their defaults from here
-      - "pyproject.toml"
-      - "uv.lock"
-  workflow_dispatch:
+# on:
+#   push:
+#     branches: [main]
+#     paths:
+#       - "scorers/**"
+#       - "prompts/**"
+#       - "evals/parameters.py"
+#       - "src/config.py" # prompts/ and parameters derive their defaults from here
+#       - "pyproject.toml"
+#       - "uv.lock"
+#   workflow_dispatch:
 
-permissions:
-  contents: read
+# permissions:
+#   contents: read
 
-# Avoid racing concurrent pushes to the same project (last write wins anyway).
-concurrency:
-  group: push-braintrust
-  cancel-in-progress: false
+# # Avoid racing concurrent pushes to the same project (last write wins anyway).
+# concurrency:
+#   group: push-braintrust
+#   cancel-in-progress: false
 
-jobs:
-  push:
-    name: Push scorers, prompts & parameters
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+# jobs:
+#   push:
+#     name: Push scorers, prompts & parameters
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+#       - name: Install uv
+#         uses: astral-sh/setup-uv@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version-file: ".python-version"
 
-      - name: Install dependencies
-        env:
-          UV_SYSTEM_PYTHON: 1
-        run: uv sync
+#       - name: Install dependencies
+#         env:
+#           UV_SYSTEM_PYTHON: 1
+#         run: uv sync
 
-      - name: Put project venv on PATH
-        # The bt CLI runs each definition file with `python3` from PATH; point that
-        # at the synced venv so braintrust + src/ deps are importable during push.
-        run: echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+#       - name: Put project venv on PATH
+#         # The bt CLI runs each definition file with `python3` from PATH; point that
+#         # at the synced venv so braintrust + src/ deps are importable during push.
+#         run: echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
-      - name: Install Braintrust CLI
-        run: |
-          curl -fsSL https://bt.dev/cli/install.sh | bash
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+#       - name: Install Braintrust CLI
+#         run: |
+#           curl -fsSL https://bt.dev/cli/install.sh | bash
+#           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+#           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
-      - name: Push scorers
-        run: bt functions push scorers/push_scorers.py --if-exists replace -p agent-supervisor --no-input
-        env:
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+#       - name: Push scorers
+#         run: bt functions push scorers/push_scorers.py --if-exists replace -p agent-supervisor --no-input
+#         env:
+#           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
 
-      - name: Push prompts
-        run: bt functions push prompts/push_prompts.py --if-exists replace -p agent-supervisor --no-input
-        env:
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+#       - name: Push prompts
+#         run: bt functions push prompts/push_prompts.py --if-exists replace -p agent-supervisor --no-input
+#         env:
+#           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
 
-      - name: Push parameters
-        run: bt functions push evals/parameters.py --if-exists replace -p agent-supervisor --no-input
-        env:
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+#       - name: Push parameters
+#         run: bt functions push evals/parameters.py --if-exists replace -p agent-supervisor --no-input
+#         env:
+#           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}

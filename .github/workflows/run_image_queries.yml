@@ -1,32 +1,32 @@
-name: Daily image upload trace generation
-on:
-  schedule:
-    - cron: "47 15 * * *"  # daily at 15:47 UTC, offset from existing 15:23 job
-  workflow_dispatch:
+# name: Daily image upload trace generation
+# on:
+#   schedule:
+#     - cron: "47 15 * * *"  # daily at 15:47 UTC, offset from existing 15:23 job
+#   workflow_dispatch:
 
-jobs:
-  run-image-queries:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# jobs:
+#   run-image-queries:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+#       - name: Install uv
+#         uses: astral-sh/setup-uv@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version-file: ".python-version"
 
-      - name: Install dependencies
-        env:
-          UV_SYSTEM_PYTHON: 1
-        run: uv sync
+#       - name: Install dependencies
+#         env:
+#           UV_SYSTEM_PYTHON: 1
+#         run: uv sync
 
-      - name: Run image queries
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-        run: |
-          uv run python scripts/run_image_queries.py
+#       - name: Run image queries
+#         env:
+#           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
+#           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+#         run: |
+#           uv run python scripts/run_image_queries.py
